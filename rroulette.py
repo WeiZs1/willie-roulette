@@ -35,6 +35,7 @@ def rroulette(bot, trigger):
 @module.require_chanmsg
 def chambers(bot,trigger):
    global CHAMBERS, blanks
+   blanks = [0]
    if not trigger.group(3):
       bot.reply("No chamber count specified.")
    CHAMBERS = int(trigger.group(3))
