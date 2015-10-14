@@ -3,17 +3,16 @@ rroulette.py - fully chamber-based russian roulette based off an mIRC script tha
 Copyright 2015 dgw, WZ1
 """
 from __future__ import division
-from sopel import module
 import random
-
+from sopel import module
 
 CHAMBERS=6
 blanks = [0]
-
+chamber=0
 @module.commands('rroulette','russia','rr')
 @module.require_chanmsg
 def rroulette(bot, trigger):
-   global CHAMBERS, blanks
+   global blanks,chamber
    chamber = random.randint(1, CHAMBERS)
    while CHAMBERS != chamber:
       if chamber not in blanks:
@@ -29,13 +28,38 @@ def rroulette(bot, trigger):
       bot.say("BANG! %s is dead!" % trigger.nick)
    update_roulettes(bot, trigger.nick, won)
     
+@module.commands('shoot')
+@module.require_chanmsg
+def shoot(bot,trigger):
+   global blanks,chamber
+   chamber = random.randint(1, CHAMBERS)
+   target = trigger.group(3)
+   if not target:
+      bot.reply("Who did you want to shoot?")
+      return module.NOLIMIT
+   if target.lower() not in bot.privileges[trigger.sender.lower()]:
+      bot.say("You can't shoot people who don't exist!")
+      return module.NOLIMIT 
+   if target == bot.nick:
+      bot.say("You can't shoot me! How rude!")
+      return module.NOLIMIT 
+   if chamber == random.randint(1,CHAMBERS):
+      bot.say("%s shoots %s" % (trigger.nick, target))
+      won=True
+      targetwin=False
+   else:
+      bot.say("The chamber was blank. %s loses. Chambers reloaded." % trigger.nick)
+      won=False
+      targetwin=True
+   blanks = [0]
+   update_roulettes(bot, trigger.nick, won)
+   update_roulettes(bot, target, targetwin)
 
 @module.commands('chambers')
 @module.require_admin
 @module.require_chanmsg
 def chambers(bot,trigger):
    global CHAMBERS, blanks
-   blanks = [0]
    if not trigger.group(3):
       bot.reply("No chamber count specified.")
    CHAMBERS = int(trigger.group(3))
@@ -63,11 +87,4 @@ def update_roulettes(bot, nick, won=False):
 def get_roulettes(bot, nick):
     games = bot.db.get_nick_value(nick, 'rroulette_games') or 0
     wins = bot.db.get_nick_value(nick, 'rroulette_wins') or 0
-    return games, wins
-
-
-
-def get_roulettes(bot, nick):
-    games = bot.db.get_nick_value(nick, 'roulette_games') or 0
-    wins = bot.db.get_nick_value(nick, 'roulette_wins') or 0
     return games, wins
