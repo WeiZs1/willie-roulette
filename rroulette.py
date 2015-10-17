@@ -14,11 +14,12 @@ chamber=0
 @module.require_chanmsg
 def rroulette(bot, trigger):
    global blanks
-   if chambercheck()==True:
+   chamber = random.randint(1, CHAMBERS)
+   if chambercheck(chamber)==True:
       won=False
       bot.say("BANG! %s is dead!" % trigger.nick)
       update_roulettes(bot, trigger.nick, won)
-   if chambercheck()==False:
+   else:
       won=True
       bot.say("Click! %s is lucky; there was no bullet." % trigger.nick)
       update_roulettes(bot, trigger.nick, won)
@@ -27,6 +28,7 @@ def rroulette(bot, trigger):
 @module.require_chanmsg
 def shoot(bot,trigger):
    global chamber
+   chamber = random.randint(1, CHAMBERS)
    target = tools.Identifier(trigger.group(3) or '')
    if not target:
       bot.reply("Who did you want to shoot?")
@@ -37,13 +39,13 @@ def shoot(bot,trigger):
    if target == bot.nick:
       bot.say("You can't shoot me! How rude!")
       return module.NOLIMIT
-   if chambercheck()==True:
+   if chambercheck(chamber)==True:
       targetwin=False
       won=True
       bot.say("%s has shot %s dead! Chambers reset." % (trigger.nick,target))
       update_roulettes(bot, trigger.nick, won)
       update_roulettes(bot, target, targetwin)
-   if chambercheck()==False:
+   elif chambercheck(chamber)==False:
       targetwin=True
       won=False
       bot.say("The chamber was blank. %s fails to kill %s. Chambers reloaded." % (trigger.nick,target))
@@ -88,6 +90,8 @@ def resetrr(bot, trigger):
       bot.db.set_nick_value(target, 'rroulette_wins', 0)
       bot.say("'Tis done, My Master!")
    
+
+   
 def update_roulettes(bot, nick, won=False):
     games, wins = get_roulettes(bot, nick)
     games += 1
@@ -96,23 +100,23 @@ def update_roulettes(bot, nick, won=False):
     bot.db.set_nick_value(nick, 'rroulette_games', games)
     bot.db.set_nick_value(nick, 'rroulette_wins', wins)
 
+
 def get_roulettes(bot, nick):
     games = bot.db.get_nick_value(nick, 'rroulette_games') or 0
     wins = bot.db.get_nick_value(nick, 'rroulette_wins') or 0
     return games, wins
 
-def chambercheck():
-   global blanks,CHAMBERS,chamber
-   chamber = random.randint(1, CHAMBERS)
+
+def chambercheck(chamber):
+   global blanks,CHAMBERS
    while CHAMBERS != chamber:
       if chamber not in blanks:
          blanks.extend([chamber])
          dead = False
-         break
-      else:
+         return dead
+      elif chamber in blanks:
          chamber = random.randint(1, CHAMBERS)
-   if CHAMBERS == chamber:
+   else:
       blanks = []
       dead = True
-   return dead
-   
+      return dead
