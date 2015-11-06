@@ -28,6 +28,7 @@ def rroulette(bot, trigger):
 @module.require_chanmsg
 def shoot(bot,trigger):
    global chamber
+   shot=chambercheck(chamber)
    chamber = random.randint(1, CHAMBERS)
    target = tools.Identifier(trigger.group(3) or '')
    if not target:
@@ -39,18 +40,22 @@ def shoot(bot,trigger):
    if target == bot.nick:
       bot.say("You can't shoot me! How rude!")
       return module.NOLIMIT
-   if chambercheck(chamber)==True:
+   elif target == trigger.nick:
+      bot.say("You can't shoot yourself like that! Use .rr instead!")
+      return module.NOLIMIT
+   if shot==True:
       targetwin=False
       won=True
       bot.say("%s has shot %s dead! Chambers reset." % (trigger.nick,target))
       update_roulettes(bot, trigger.nick, won)
       update_roulettes(bot, target, targetwin)
-   elif chambercheck(chamber)==False:
+   elif shot==False:
       targetwin=True
       won=False
       bot.say("The chamber was blank. %s fails to kill %s. Chambers reloaded." % (trigger.nick,target))
       update_roulettes(bot, trigger.nick, won)
       update_roulettes(bot, target, targetwin)
+   return module.NOLIMIT
 
 @module.commands('chambers')
 @module.require_admin
@@ -74,7 +79,7 @@ def rroulettes(bot, trigger):
             % (target, wins, games, wins / games * 100))
 
 @module.commands('resetrr','russianreset','rrr')
-@module.require_admin
+@module.require_admin('Only bot admins can reset roulette stats')
 def resetrr(bot, trigger):
    target = tools.Identifier(trigger.group(3) or '')
    if not target :
